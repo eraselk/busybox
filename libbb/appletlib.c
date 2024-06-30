@@ -778,7 +778,6 @@ int busybox_main(int argc UNUSED_PARAM, char **argv)
 
 		dup2(1, 2);
 		full_write2_str(bb_banner); /* reuse const string */
-		full_write2_str(" multi-call binary.\n"); /* reuse */
 		full_write2_str(
 			"\n"
 			"Usage: busybox [function [arguments]...]\n"
