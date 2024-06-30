@@ -780,9 +780,6 @@ int busybox_main(int argc UNUSED_PARAM, char **argv)
 		full_write2_str(bb_banner); /* reuse const string */
 		full_write2_str(" multi-call binary.\n"); /* reuse */
 		full_write2_str(
-			"BusyBox is copyrighted by many authors between 1998-2015.\n"
-			"Licensed under GPLv2. See source distribution for detailed\n"
-			"copyright notices.\n"
 			"\n"
 			"Usage: busybox [function [arguments]...]\n"
 			"   or: busybox --list"IF_FEATURE_INSTALLER("[-full]")"\n"
