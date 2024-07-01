@@ -14,7 +14,12 @@
 #define BB_BUILDER "nobody@ydobon"
 #endif
 
-const char bb_banner[] ALIGN1 = "Enhanced BusyBox " BB_VER " ("BB_BUILDER")" " ("BB_EXTRA_VERSION")" "\n";
+/* allow overriding busybox name */
+#ifndef BB_NAME
+#define BB_NAME ""
+#endif
+
+const char bb_banner[] ALIGN1 = BB_NAME " BusyBox " BB_VER " ("BB_BUILDER")" " ("BB_EXTRA_VERSION")" "\n";
 
 
 const char bb_msg_memory_exhausted[] ALIGN1 = "out of memory";
