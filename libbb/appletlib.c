@@ -154,7 +154,6 @@ void FAST_FUNC bb_show_usage(void)
 			ap--;
 		}
 		full_write2_str(bb_banner);
-		full_write2_str(" multi-call binary.\n"); /* common string */
 		if (*p == '\b')
 			full_write2_str("\nNo help available\n");
 		else {
