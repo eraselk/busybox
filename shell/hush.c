@@ -1961,6 +1961,15 @@ enum {
 		,
 };
 
+#ifdef __BIONIC__
+static int sigisemptyset(const sigset_t *set)
+{
+    sigset_t empty;
+    sigemptyset(&empty);
+    return memcmp(&empty, set, sizeof(sigset_t)) == 0;
+}
+#endif
+
 static void record_pending_signo(int sig)
 {
 	sigaddset(&G.pending_set, sig);
