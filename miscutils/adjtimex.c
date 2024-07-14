@@ -33,11 +33,7 @@
 //usage:     "\n	-p TCONST"
 
 #include "libbb.h"
-#ifdef __BIONIC__
-# include <linux/timex.h>
-#else
-# include <sys/timex.h>
-#endif
+#include <sys/timex.h>
 
 static const uint16_t statlist_bit[] ALIGN2 = {
 	STA_PLL,
