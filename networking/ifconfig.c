@@ -127,14 +127,6 @@
 # define IFF_DYNAMIC     0x8000	/* dialup device with changing addresses */
 #endif
 
-#if ENABLE_FEATURE_IPV6
-struct in6_ifreq {
-	struct in6_addr ifr6_addr;
-	uint32_t ifr6_prefixlen;
-	int ifr6_ifindex;
-};
-#endif
-
 /*
  * Here are the bit masks for the "flags" member of struct options below.
  * N_ signifies no arg prefix; M_ signifies arg prefixed by '-'.
