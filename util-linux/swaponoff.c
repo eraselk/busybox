@@ -75,9 +75,7 @@
 #include "libbb.h"
 #include "common_bufsiz.h"
 #include <mntent.h>
-#ifndef __BIONIC__
-# include <sys/swap.h>
-#endif
+#include <sys/swap.h>
 
 #if ENABLE_FEATURE_SWAPONOFF_LABEL
 # include "volume_id.h"
