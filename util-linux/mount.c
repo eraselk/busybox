@@ -768,7 +768,8 @@ static int mount_it_now(struct mntent *mp, unsigned long vfsflags, char *filtero
 	// If the mount was successful, and we're maintaining an old-style
 	// mtab file by hand, add the new entry to it now.
  mtab:
-	if (USE_MTAB && !rc && !(vfsflags & MS_REMOUNT)) {
+ #if USE_MTAB
+	if (!rc && !(vfsflags & MS_REMOUNT)) {
 		char *fsname;
 		FILE *mountTable = setmntent(bb_path_mtab_file, "a+");
 		const char *option_str = mount_option_str;
@@ -814,6 +815,7 @@ static int mount_it_now(struct mntent *mp, unsigned long vfsflags, char *filtero
 			free(fsname);
 		}
 	}
+#endif // USE_MTAB
  ret:
 	return rc;
 }
