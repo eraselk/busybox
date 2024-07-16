@@ -43,6 +43,9 @@
 #include "../libres/dietdns.h"
 #include "libbb.h"
 #include "common_bufsiz.h"
+#ifdef __BIONIC__
+#include "bionic_resolv.h"
+#endif
 
 /*
  * Mini nslookup implementation for busybox
@@ -147,8 +150,9 @@ static void server_print(void)
 	char *server;
 	struct sockaddr *sa;
 
-#if 0
-	sa = (struct sockaddr*)_diet_res._u._ext.nsaddrs[0];
+#if ENABLE_FEATURE_IPV6
+	if (_res._u._ext.nscount)
+		sa = (struct sockaddr*)&_res._u._ext.ext->nsaddrs[0].sin6;
 	if (!sa)
 #endif
 		sa = (struct sockaddr*)&_diet_res.nsaddr_list[0];
@@ -166,8 +170,9 @@ static void set_default_dns(const char *server)
 {
 	len_and_sockaddr *lsa;
 
+	// Set a fallback DNS server
 	if (!server)
-		return;
+		server = "8.8.8.8";
 
 	/* NB: this works even with, say, "[::1]:5353"! :) */
 	lsa = xhost2sockaddr(server, 53);
@@ -177,21 +182,16 @@ static void set_default_dns(const char *server)
 		/* struct copy */
 		_diet_res.nsaddr_list[0] = lsa->u.sin;
 	}
-#if 0
-	/* Hoped libc can cope with IPv4 address there too.
-	 * No such luck, glibc 2.4 segfaults even with IPv6,
-	 * maybe I misunderstand how to make glibc use IPv6 addr?
-	 * (uclibc 0.9.31+ should work) */
+#if ENABLE_FEATURE_IPV6
 	if (lsa->u.sa.sa_family == AF_INET6) {
-		// glibc neither SEGVs nor sends any dgrams with this
-		// (strace shows no socket ops):
-		//_res.nscount = 0;
-		_diet_res._u._ext.nscount = 1;
-		/* store a pointer to part of malloc'ed lsa */
-		_diet_res._u._ext.nsaddrs[0] = &lsa->u.sin6;
-		/* must not free(lsa)! */
+		_res.nscount = 1;
+		_res._u._ext.nscount = 1;
+		/* struct copy */
+		_res._u._ext.ext->nsaddrs[0].sin6 = lsa->u.sin6;
+		_res.nsaddr_list[0].sin_family = 0;
 	}
 #endif
+	free(lsa);
 }
 
 int nslookup_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
@@ -205,9 +205,6 @@ int nslookup_main(int argc, char **argv)
 	if (!argv[1] || argv[1][0] == '-' || argc > 3)
 		bb_show_usage();
 
-	/* initialize DNS structure _res used in printing the default
-	 * name server and in the explicit name server option feature. */
-	diet_res_init();
 	/* rfc2133 says this enables IPv6 lookups */
 	/* (but it also says "may be enabled in /etc/resolv.conf") */
 	/*_res.options |= RES_USE_INET6;*/
