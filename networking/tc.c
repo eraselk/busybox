@@ -31,7 +31,7 @@
 //usage:	"qdisc [handle QHANDLE] [root|"IF_FEATURE_TC_INGRESS("ingress|")"parent CLASSID]\n"
 /* //usage: "[estimator INTERVAL TIME_CONSTANT]\n" */
 //usage:	"	[[QDISC_KIND] [help|OPTIONS]]\n"
-//usage:	"	QDISC_KIND := [p|b]fifo|tbf|prio|cbq|red|etc.\n"
+//usage:	"	QDISC_KIND := [p|b]fifo|tbf|prio|red|etc.\n"
 //usage:	"qdisc show [dev STRING]"IF_FEATURE_TC_INGRESS(" [ingress]")"\n"
 //usage:	"class [classid CLASSID] [root|parent CLASSID]\n"
 //usage:	"	[[QDISC_KIND] [help|OPTIONS] ]\n"
@@ -230,7 +230,7 @@ static int cbq_parse_opt(int argc, char **argv, struct nlmsghdr *n)
 {
 	return 0;
 }
-#endif
+
 static int cbq_print_opt(struct rtattr *opt)
 {
 	struct rtattr *tb[TCA_CBQ_MAX+1];
@@ -322,6 +322,7 @@ static int cbq_print_opt(struct rtattr *opt)
  done:
 	return 0;
 }
+#endif
 
 static FAST_FUNC int print_qdisc(
 		const struct sockaddr_nl *who UNUSED_PARAM,
@@ -373,7 +374,8 @@ static FAST_FUNC int print_qdisc(
 		if (qqq == 0) { /* pfifo_fast aka prio */
 			prio_print_opt(tb[TCA_OPTIONS]);
 		} else if (qqq == 1) { /* class based queuing */
-			cbq_print_opt(tb[TCA_OPTIONS]);
+			/* cbq_print_opt(tb[TCA_OPTIONS]); */
+			printf("cbq not supported");
 		} else {
 			/* don't know how to print options for this qdisc */
 			printf("(options for %s)", name);
@@ -444,7 +446,8 @@ static FAST_FUNC int print_class(
 			/* nothing. */ /*prio_print_opt(tb[TCA_OPTIONS]);*/
 		} else if (qqq == 1) { /* class based queuing */
 			/* cbq_print_copt() is identical to cbq_print_opt(). */
-			cbq_print_opt(tb[TCA_OPTIONS]);
+			/* cbq_print_opt(tb[TCA_OPTIONS]); */
+			printf("cbq not supported");
 		} else {
 			/* don't know how to print options for this class */
 			printf("(options for %s)", name);
