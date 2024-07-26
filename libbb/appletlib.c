@@ -154,6 +154,7 @@ void FAST_FUNC bb_show_usage(void)
 			ap--;
 		}
 		full_write2_str(bb_banner);
+		full_write2_str(" multi-call binary.\n"); /* common string */
 		if (*p == '\b')
 			full_write2_str("\nNo help available\n");
 		else {
@@ -777,7 +778,11 @@ int busybox_main(int argc UNUSED_PARAM, char **argv)
 
 		dup2(1, 2);
 		full_write2_str(bb_banner); /* reuse const string */
+		full_write2_str(" multi-call binary.\n"); /* reuse */
 		full_write2_str(
+			"BusyBox is copyrighted by many authors between 1998-2015.\n"
+			"Licensed under GPLv2. See source distribution for detailed\n"
+			"copyright notices.\n"
 			"\n"
 			"Usage: busybox [function [arguments]...]\n"
 			"   or: busybox --list"IF_FEATURE_INSTALLER("[-full]")"\n"
@@ -913,7 +918,7 @@ int busybox_main(int argc UNUSED_PARAM, char **argv)
 # endif
 
 # if NUM_APPLETS > 0
-void FAST_FUNC show_usage_if_dash_dash_help(int applet_no, char **argv)
+void FAST_FUNC show_usage_if_dash_dash_help(int applet_no UNUSED_PARAM, char **argv)
 {
 	/* Special case. POSIX says "test --help"
 	 * should be no different from e.g. "test --foo".
@@ -1099,10 +1104,7 @@ int main(int argc UNUSED_PARAM, char **argv)
 	if (argv[1] && is_prefixed_with(bb_basename(argv[0]), "busybox"))
 		argv++;
 # endif
-	if (is_suffixed_with(argv[0], "busybox.so"))
-		applet_name = "busybox";
-	else
-		applet_name = argv[0];
+	applet_name = argv[0];
 	if (applet_name[0] == '-')
 		applet_name++;
 	applet_name = bb_basename(applet_name);

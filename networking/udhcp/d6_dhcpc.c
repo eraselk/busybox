@@ -48,7 +48,6 @@
 //applet:IF_UDHCPC6(APPLET(udhcpc6, BB_DIR_USR_BIN, BB_SUID_DROP))
 
 //kbuild:lib-$(CONFIG_UDHCPC6) += d6_dhcpc.o d6_packet.o d6_socket.o common.o socket.o signalpipe.o
-//kbuild:lib-$(CONFIG_UDHCPC6) += ifaddrs.o
 //kbuild:lib-$(CONFIG_FEATURE_UDHCPC6_RFC3646) += domain_codec.o
 //kbuild:lib-$(CONFIG_FEATURE_UDHCPC6_RFC4704) += domain_codec.o
 
@@ -605,7 +604,7 @@ static NOINLINE int send_d6_info_request(void)
 	return d6_mcast_from_client_data_ifindex(&packet, opt_ptr);
 }
 
-/* Milticast a DHCPv6 Solicit packet to the network, with an optionally requested IP.
+/* Multicast a DHCPv6 Solicit packet to the network, with an optionally requested IP.
  *
  * RFC 3315 17.1.1. Creation of Solicit Messages
  *
@@ -962,6 +961,7 @@ static NOINLINE int d6_recv_raw_packet(struct in6_addr *peer_ipv6, struct d6_pac
 	d6_dump_packet(&packet.data);
 
 	bytes -= sizeof(packet.ip6) + sizeof(packet.udp);
+	memset(d6_pkt, 0, sizeof(*d6_pkt));
 	memcpy(d6_pkt, &packet.data, bytes);
 	return bytes;
 }

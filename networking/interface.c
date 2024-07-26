@@ -54,7 +54,7 @@
 #define _PATH_PROCNET_IFINET6           "/proc/net/if_inet6"
 
 #ifdef HAVE_AFINET6
-# ifndef _UAPI_IPV6_H
+# ifndef _LINUX_IN6_H
 /*
  * This is from linux/include/net/ipv6.h
  */

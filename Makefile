@@ -1,7 +1,7 @@
 VERSION = 1
-PATCHLEVEL = 36
-SUBLEVEL = 1
-EXTRAVERSION =
+PATCHLEVEL = 37
+SUBLEVEL = 0
+EXTRAVERSION = .git
 NAME = Unnamed
 
 # *DOCUMENTATION*
@@ -477,7 +477,6 @@ libs-y		:= \
 		init/ \
 		libbb/ \
 		libpwdgrp/ \
-		libres/ \
 		loginutils/ \
 		mailutils/ \
 		miscutils/ \
@@ -968,6 +967,7 @@ endif # CONFIG_MODULES
 # Directories & files removed with 'make clean'
 CLEAN_DIRS  += $(MODVERDIR) _install 0_lib
 CLEAN_FILES +=	busybox busybox_unstripped* busybox.links \
+		busybox*.suid busybox*.nosuid \
                 System.map .kernelrelease \
                 .tmp_kallsyms* .tmp_version .tmp_busybox* .tmp_System.map
 

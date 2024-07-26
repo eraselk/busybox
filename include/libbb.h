@@ -397,6 +397,13 @@ extern int *BB_GLOBAL_CONST bb_errno;
 uint64_t bb_bswap_64(uint64_t x) FAST_FUNC;
 #endif
 
+unsigned FAST_FUNC bb_popcnt_32(uint32_t m);
+#if ULONG_MAX > 0xffffffff
+unsigned FAST_FUNC bb_popcnt_long(unsigned long m);
+#else
+#define bb_popcnt_long(m) bb_popcnt_32(m)
+#endif
+
 unsigned long FAST_FUNC isqrt(unsigned long long N);
 
 unsigned long long monotonic_ns(void) FAST_FUNC;
@@ -435,7 +442,7 @@ void *mmap_read(int fd, size_t size) FAST_FUNC;
 void *mmap_anon(size_t size) FAST_FUNC;
 void *xmmap_anon(size_t size) FAST_FUNC;
 
-#if defined(i386)      /* only 32bit, x64 has emulated variable page size */
+#if defined(__x86_64__) || defined(i386)
 # define BB_ARCH_FIXED_PAGESIZE 4096
 #elif defined(__arm__) /* only 32bit, 64bit ARM has variable page size */
 # define BB_ARCH_FIXED_PAGESIZE 4096
@@ -1281,6 +1288,8 @@ void set_task_comm(const char *comm) FAST_FUNC;
 #endif
 void exit_SUCCESS(void) NORETURN FAST_FUNC;
 void _exit_SUCCESS(void) NORETURN FAST_FUNC;
+void exit_FAILURE(void) NORETURN FAST_FUNC;
+void _exit_FAILURE(void) NORETURN FAST_FUNC;
 
 /* Helpers for daemonization.
  *
@@ -1307,10 +1316,12 @@ void _exit_SUCCESS(void) NORETURN FAST_FUNC;
  */
 enum {
 	DAEMON_CHDIR_ROOT      = 1 << 0,
-	DAEMON_DEVNULL_STDIO   = 1 << 1,
-	DAEMON_CLOSE_EXTRA_FDS = 1 << 2,
-	DAEMON_ONLY_SANITIZE   = 1 << 3, /* internal use */
-	//DAEMON_DOUBLE_FORK     = 1 << 4, /* double fork to avoid controlling tty */
+	DAEMON_DEVNULL_STDIN   = 1 << 1,
+	DAEMON_DEVNULL_OUTERR  = 2 << 1,
+	DAEMON_DEVNULL_STDIO   = 3 << 1,
+	DAEMON_CLOSE_EXTRA_FDS = 1 << 3,
+	DAEMON_ONLY_SANITIZE   = 1 << 4, /* internal use */
+	//DAEMON_DOUBLE_FORK     = 1 << 5, /* double fork to avoid controlling tty */
 };
 #if BB_MMU
   enum { re_execed = 0 };
@@ -1319,7 +1330,7 @@ enum {
 # define bb_daemonize(flags)                bb_daemonize_or_rexec(flags, bogus)
 #else
   extern bool re_execed;
-  /* Note: re_exec() and fork_or_rexec() do argv[0][0] |= 0x80 on NOMMU!
+  /* Note: re_exec() sets argv[0][0] |= 0x80 on NOMMU!
    * _Parent_ needs to undo it if it doesn't want to have argv[0] mangled.
    */
   void re_exec(char **argv) NORETURN FAST_FUNC;
@@ -1333,6 +1344,7 @@ enum {
 # define bb_daemonize(a) BUG_bb_daemonize_is_unavailable_on_nommu()
 #endif
 void bb_daemonize_or_rexec(int flags, char **argv) FAST_FUNC;
+/* Unlike bb_daemonize_or_rexec, these two helpers do not setsid: */
 void bb_sanitize_stdio(void) FAST_FUNC;
 #define bb_daemon_helper(arg) bb_daemonize_or_rexec((arg) | DAEMON_ONLY_SANITIZE, NULL)
 /* Clear dangerous stuff, set PATH. Return 1 if was run by different user. */
@@ -1342,6 +1354,7 @@ int sanitize_env_if_suid(void) FAST_FUNC;
 /* For top, ps. Some argv[i] are replaced by malloced "-opt" strings */
 void make_all_argv_opts(char **argv) FAST_FUNC;
 char* single_argv(char **argv) FAST_FUNC;
+char **skip_dash_dash(char **argv) FAST_FUNC;
 extern const char *const bb_argv_dash[]; /* { "-", NULL } */
 extern uint32_t option_mask32;
 uint32_t getopt32(char **argv, const char *applet_opts, ...) FAST_FUNC;
@@ -1442,6 +1455,13 @@ void bb_verror_msg(const char *s, va_list p, const char *strerr) FAST_FUNC;
 void bb_die_memory_exhausted(void) NORETURN FAST_FUNC;
 void bb_logenv_override(void) FAST_FUNC;
 
+/* x86 benefits from narrow exit code variables
+ * (because it has no widening MOV imm8,word32 insn, has to use MOV imm32,w
+ * for "exitcode = EXIT_FAILURE" and similar. The downside is that sometimes
+*  gcc widens the variable to int in various ugly suboptimal ways).
+ */
+typedef smalluint exitcode_t;
+
 #if ENABLE_FEATURE_SYSLOG_INFO
 void bb_info_msg(const char *s, ...) __attribute__ ((format (printf, 1, 2))) FAST_FUNC;
 void bb_simple_info_msg(const char *s) FAST_FUNC;
@@ -1511,6 +1531,8 @@ int hush_main(int argc, char** argv) IF_SHELL_HUSH(MAIN_EXTERNALLY_VISIBLE);
 /* If shell needs them, they exist even if not enabled as applets */
 int echo_main(int argc, char** argv) IF_ECHO(MAIN_EXTERNALLY_VISIBLE);
 int sleep_main(int argc, char **argv) IF_SLEEP(MAIN_EXTERNALLY_VISIBLE);
+/* See disabled "config ASH_SLEEP" in ash.c */
+#define ENABLE_ASH_SLEEP 0
 int printf_main(int argc, char **argv) IF_PRINTF(MAIN_EXTERNALLY_VISIBLE);
 int test_main(int argc, char **argv)
 #if ENABLE_TEST || ENABLE_TEST1 || ENABLE_TEST2
@@ -2000,6 +2022,8 @@ int read_line_input(const char* prompt, char* command, int maxsize) FAST_FUNC;
 	read_line_input(prompt, command, maxsize)
 #endif
 
+unsigned long* FAST_FUNC get_malloc_cpu_affinity(int pid, unsigned *sz);
+
 #ifndef COMM_LEN
 # ifdef TASK_COMM_LEN
 enum { COMM_LEN = TASK_COMM_LEN };
@@ -2341,12 +2365,12 @@ void XZALLOC_CONST_PTR(const void *pptr, size_t size) FAST_FUNC;
  * use bb_default_login_shell and following defines.
  * If you change LIBBB_DEFAULT_LOGIN_SHELL,
  * don't forget to change increment constant. */
-#define LIBBB_DEFAULT_LOGIN_SHELL  "-/system/bin/sh"
+#define LIBBB_DEFAULT_LOGIN_SHELL  "-/bin/sh"
 extern const char bb_default_login_shell[] ALIGN1;
 /* "/bin/sh" */
 #define DEFAULT_SHELL              (bb_default_login_shell+1)
 /* "sh" */
-#define DEFAULT_SHELL_SHORT_NAME   (bb_default_login_shell+13)
+#define DEFAULT_SHELL_SHORT_NAME   (bb_default_login_shell+6)
 
 /* The following devices are the same on all systems.  */
 #define CURRENT_TTY "/dev/tty"
@@ -2390,15 +2414,9 @@ extern const char bb_default_login_shell[] ALIGN1;
 # define VC_4 "/dev/tty4"
 # define VC_5 "/dev/tty5"
 # define VC_FORMAT "/dev/tty%d"
-# if defined(__ANDROID__)
-#  define LOOP_FORMAT "/dev/block/loop%u"
-#  define LOOP_NAMESIZE (sizeof("/dev/block/loop") + sizeof(int)*3 + 1)
-#  define LOOP_NAME "/dev/block/loop"
-# else
-#  define LOOP_FORMAT "/dev/loop%u"
-#  define LOOP_NAMESIZE (sizeof("/dev/loop") + sizeof(int)*3 + 1)
-#  define LOOP_NAME "/dev/loop"
-# endif
+# define LOOP_FORMAT "/dev/loop%u"
+# define LOOP_NAMESIZE (sizeof("/dev/loop") + sizeof(int)*3 + 1)
+# define LOOP_NAME "/dev/loop"
 # define FB_0 "/dev/fb0"
 #endif
 
