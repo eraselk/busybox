@@ -41,7 +41,10 @@ int setenforce_main(int argc UNUSED_PARAM, char **argv)
 
 	if (!argv[1] || argv[2])
 		bb_show_usage();
-
+    
+    if ((strcasecmp(argv[1], setenforce_cmd[5]) != 0) || (strcmp(argv[1], setenforce_cmd[5]) == 0))
+        bb_show_usage();
+    
 	selinux_or_die();
 
 	for (i = 0; setenforce_cmd[i]; i++) {
