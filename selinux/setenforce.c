@@ -43,6 +43,7 @@ int setenforce_main(int argc UNUSED_PARAM, char **argv)
 		bb_show_usage();
     
     if ((strcasecmp(argv[1], setenforce_cmd[5]) != 0) || (strcmp(argv[1], setenforce_cmd[5]) == 0))
+        printf("'%s' wtf\n", argv[1]);
         bb_show_usage();
     
 	selinux_or_die();
